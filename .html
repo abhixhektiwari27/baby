@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Letter For You</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Poppins:wght@300;400&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: A soft, romantic palette of pinks and rose tones. -->
+    <!-- Application Structure Plan: The application is designed as a single, focused interactive element—a digital Polaroid. This structure was chosen to preserve the intimate and personal nature of the source love letter. Instead of a multi-section dashboard, which would be inappropriate for the content, the user flow is simple: view the blurred Polaroid, click to un-blur the photo and reveal the message. This mimics the real-world experience of receiving and reading a personal note, creating an emotional connection. The primary interaction is a "click to reveal," which builds a moment of gentle anticipation and surprise, enhancing the message's impact. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: The entire love letter. -> Goal: Present the letter in an engaging, emotional format. -> Viz/Presentation: An interactive Polaroid card built with HTML/CSS. A translucent overlay with text is placed on top of the blurred image. -> Interaction: On-click, the overlay fades out, and the image's blur filter is removed, revealing the sharp photo and the letter text simultaneously. -> Justification: This approach turns a static message into a dynamic experience, focusing on feeling and discovery rather than data analysis. Library/Method: Vanilla JS for DOM manipulation and animations.
+        - Report Info: The theme of love and cherished memories. -> Goal: Create a romantic and immersive atmosphere. -> Viz/Presentation: A subtle, full-screen canvas animation of floating heart particles. -> Interaction: Passive background visual. -> Justification: Adds a "wow" factor and reinforces the letter's theme without distracting from the main content. Library/Method: HTML Canvas API with Vanilla JS.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #FFF0F5; 
+        }
+        .font-playfair {
+            font-family: 'Playfair Display', serif;
+        }
+        .polaroid {
+            background-color: #FFFFFF;
+            border: 1px solid #FBCFE8;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            transition: all 0.3s ease-in-out;
+        }
+        .polaroid:hover {
+            transform: translateY(-5px) rotate(1deg);
+            box-shadow: 0 20px 35px -8px rgba(0, 0, 0, 0.2), 0 15px 15px -8px rgba(0, 0, 0, 0.07);
+        }
+        .photo-area {
+            background-color: #FBCFE8;
+            border: 10px solid #FFFFFF;
+            cursor: pointer;
+        }
+        #letter-content {
+            transition: opacity 1.5s ease-in-out;
+        }
+        #cover-overlay {
+            background-color: rgba(255, 240, 245, 0.9);
+            transition: opacity 1.5s ease-in-out;
+        }
+        #reveal-image {
+            transition: filter 1.5s ease-in-out;
+        }
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        .heart-icon {
+            font-size: 4rem;
+            line-height: 1;
+            color: #F472B6;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="bg-[#FFF0F5] text-black flex flex-col items-center justify-center min-h-screen p-4">
+    <canvas id="hearts-canvas"></canvas>
+    <header class="text-center mb-6">
+        <h1 class="text-4xl md:text-5xl font-playfair font-semibold italic text-black/90 tracking-wide">I LOVE YOU BABY 💗</h1>
+    </header>
+    <div class="rounded-lg max-w-sm mx-auto">
+        <main class="w-full max-w-sm mx-auto text-center">
+            <div class="polaroid rounded-lg p-4 w-full">
+                <div id="media-container" class="photo-area w-full h-72 md:h-80 rounded-md relative flex items-center justify-center overflow-hidden">
+                    <img id="reveal-image" src="https://i.ibb.co/4nrbSVcG/IMG-20250916-WA0067.jpg" alt="A cherished memory" class="w-full h-full object-cover blur-lg">
+                    <div id="cover-overlay" class="absolute inset-0 flex flex-col items-center justify-center text-center opacity-100">
+                        <p class="text-4xl animate-pulse">💗</p>
+                    </div>
+                </div>
+                
+                <div class="caption pt-4 px-2">
+                    <div id="letter-content" class="opacity-0 min-h-[220px] p-4 rounded-md">
+                        <p class="font-playfair italic text-lg text-left leading-relaxed text-black">
+                            Pari,<br><br>
+                            You’ve become such an important part of me. With you, everything feels so real and beautiful, and I honestly find myself falling for you more every day. I just want to see you achieve all your dreams, live life the way you want, and be truly happy. And no matter what, I’ll always be there protecting you, cheering for you, and standing with you through every phase of life.
+                        </p>
+                        <div class="mt-4 font-mono text-sm text-black/80 text-center pt-3">
+                            <p>AUGUST 30, 2025</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <audio id="love-audio" src="https://www.dropbox.com/scl/fi/lzni0gsms84997axovhs6/babbyyy.mp3?rlkey=ru6u8lni9fdepp7t0bcl89z50&st=s6y4zdd4&dl=1" preload="auto" hidden></audio>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mediaContainer = document.getElementById('media-container');
+            const letterContent = document.getElementById('letter-content');
+            const coverOverlay = document.getElementById('cover-overlay');
+            const revealImage = document.getElementById('reveal-image');
+            const loveAudio = document.getElementById('love-audio');
+            
+            mediaContainer.addEventListener('click', () => {
+                coverOverlay.style.opacity = '0';
+                letterContent.style.opacity = '1';
+                revealImage.classList.remove('blur-lg');
+                
+                try {
+                    loveAudio.volume = 0.5; 
+                    loveAudio.play();
+                } catch (error) {
+                    console.error("Audio playback failed:", error);
+                }
+            });
+
+            const canvas = document.getElementById('hearts-canvas');
+            const ctx = canvas.getContext('2d');
+
+            let width = canvas.width = window.innerWidth;
+            let height = canvas.height = window.innerHeight;
+            let hearts = [];
+
+            window.addEventListener('resize', () => {
+                width = canvas.width = window.innerWidth;
+                height = canvas.height = window.innerHeight;
+            });
+
+            class Heart {
+                constructor() {
+                    this.x = Math.random() * width;
+                    this.y = height + 50;
+                    this.size = Math.random() * 8 + 2;
+                    this.speed = Math.random() * 0.5 + 0.5;
+                    this.opacity = Math.random() * 0.5 + 0.2;
+                    this.rotation = Math.random() * 360;
+                    this.rotationSpeed = (Math.random() - 0.5) * 0.5;
+                }
+
+                draw() {
+                    ctx.save();
+                    ctx.translate(this.x, this.y);
+                    ctx.rotate(this.rotation * Math.PI / 180);
+                    ctx.fillStyle = `rgba(255, 105, 180, ${this.opacity})`;
+                    ctx.beginPath();
+                    let topCurveHeight = this.size * 0.3;
+                    ctx.moveTo(0, topCurveHeight);
+                    ctx.bezierCurveTo(0, 0, -this.size / 2, 0, -this.size / 2, topCurveHeight);
+                    ctx.bezierCurveTo(-this.size / 2, (this.size + topCurveHeight) / 2, 0, (this.size + topCurveHeight) / 2, 0, this.size);
+                    ctx.bezierCurveTo(0, (this.size + topCurveHeight) / 2, this.size / 2, (this.size + topCurveHeight) / 2, this.size / 2, topCurveHeight);
+                    ctx.bezierCurveTo(this.size / 2, 0, 0, 0, 0, topCurveHeight);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.restore();
+                }
+
+                update() {
+                    this.y -= this.speed;
+                    this.rotation += this.rotationSpeed;
+                    if (this.y < -this.size) {
+                        this.y = height + this.size;
+                        this.x = Math.random() * width;
+                        this.size = Math.random() * 8 + 2;
+                        this.speed = Math.random() * 0.5 + 0.5;
+                        this.opacity = Math.random() * 0.5 + 0.2;
+                        this.rotation = Math.random() * 360;
+                        this.rotationSpeed = (Math.random() - 0.5) * 0.5;
+                    }
+                }
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, width, height);
+                hearts.forEach(heart => {
+                    heart.update();
+                    heart.draw();
+                });
+                requestAnimationFrame(animate);
+            }
+
+            function createHearts() {
+                for (let i = 0; i < 75; i++) {
+                    hearts.push(new Heart());
+                }
+            }
+            createHearts();
+            animate();
+        });
+    </script>
+</body>
+</html>
